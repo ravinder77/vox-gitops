@@ -1,0 +1,3 @@
+replicaCount: 3
+image:
+  repository: ravinder50300/vox-frontend
