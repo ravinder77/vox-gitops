@@ -1,3 +1,9 @@
 replicaCount: 3
 image:
   repository: ravinder50300/vox-frontend
+  pullPolicy: IfNotPresent
+  tag: "v1.0.1"
+
+service:
+  type: ClusterIP
+  port: 80
