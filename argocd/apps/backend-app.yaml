@@ -1,20 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: frontend
+  name: vox-backend
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: backend=
+    argocd-image-updater.argoproj.io/backend.update-strategy: latest
+    argocd-image-updater.argoproj.io/write-back-method: git
+
 spec:
   project: default
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
-    path: helm/frontend
+    path: helm/backend
     helm:
       valueFiles:
+        - values.yaml
         - values-prod.yaml
-
   destination:
     server: https://kubernetes.default.svc
-    namespace: frontend
+    namespace: backend
 
   syncPolicy:
     automated:

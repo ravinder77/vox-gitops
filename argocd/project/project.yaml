@@ -1,0 +1,182 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: vox-project
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+
+spec:
+  description: "VOX Platform - Production GitOps Project"
+
+# ------- Allowed Source Repositories
+  sourceRepos:
+    - https://github.com/ravinder77/vox-gitops.git
+    - https://github.com/ravinder77/vox.git
+    - https://charts.external-secrets.io
+    - https://argoproj.github.io/argo-helm
+    - https://prometheus-community.github.io/helm-charts
+    - https://helm.nginx.com/stable
+
+# --------- Allowed destination clusters and namespaces ----
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: vox-production
+    - server: https://kubernetes.default.svc
+      namespace: vox-staging
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+    - server: https://kubernetes.default.svc
+      namespace: monitoring
+    - server: https://kubernetes.default.svc
+      namespace: external-secrets
+    - server: https://kubernetes.default.svc
+      namespace: argo-rollouts
+    - server: https://kubernetes.default.svc
+      namespace: ingress-nginx
+
+# --- Resource allow-list --------
+# Only permit resources that your platform actually uses.
+# Blocks accidental cluster-wide misuse.
+
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: ""
+      kind: Endpoints
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: ReplicaSet
+    - group: apps
+      kind: StatefulSet
+    - group: apps
+      kind: DaemonSet
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: argoproj.io
+      kind: Rollout
+    - group: argoproj.io
+      kind: AnalysisTemplate
+    - group: argoproj.io
+      kind: AnalysisRun
+    - group: external-secrets.io
+      kind: ExternalSecret
+    - group: external-secrets.io
+      kind: SecretStore
+    - group: external-secret.io
+      kind: ClusterSecretStore
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+    - group: monitoring.coreos.com
+      kind: PodMonitor
+    - group: monitoring.coreos.com
+      kind: PrometheusRule
+    - group: batch
+      kind: Job
+    - group: batch
+      kind: CronJob
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiExtenstion.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionRegistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionRegistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: external-secrets.io
+      kind: ClusterSecretStore
+
+ # ---- RBAC Roles -----
+  roles:
+    # Full Admin - CI system (jenkins, github actions) / platform engineers
+    - name: platform-admin
+      description: Full sync and override permissions
+      policies:
+        - p, proj:vox-project:platform-admin, applications, *, vox-project/*, allow
+      groups:
+        - platform-engineers
+        - ci-system
+
+    # Read-only - developers can view app status but not sync
+    - name: developer-readonly
+      description: View-only access for application developers
+      policies:
+        - p, proj:vox-project:developer-readonly, applications, get, vox-project/*, allow
+        - p, proj:vox-project:developer-readonly, applications, sync, vox-project/vox-staging. allow
+      groups:
+        - developers
+
+    # Deploy to staging only - QA/testing pipelines
+
+    - name: staging-deployer
+      description: Allowed to sync staging applications only
+      policies:
+        - p, proj:vox-project:staging-deployer, applications, sync, vox-project/vox-frontend, allow
+        - p, proj:vox-project:staging-deployer, applications, sync, vox-project/vox-backend, allow
+      groups:
+        - qa-team
+
+  #---- Sync Windows -------
+  # Block production syncs during business hours to prevent disruptions
+  syncWindows:
+    - kind: deny
+      schedule: "0 9 * * 1-5"    # Mon-Fri 09:00
+      duration: 8h
+      applications:
+        - vox-backend
+        - vox-frontend
+      namespaces:
+        - vox-production
+      manualSync: false     # allow manual override in emergencies
+
+    - kind: allow
+      schedule: "0 18 * * 1-5"  # Mon-Fri 18:00 onwards
+      duration: 14h
+      applications:
+        - "*"
+      manualSync: true
+
+    - kind: allow
+      schedule: "0 0 * * 6-7"
+      duration: 48h
+      applications:
+        - "*"
+      manualSync: true
+
+  # ----- Orphaned Resource Monitoring
+  orphanResources:
+    warn: true
+    ignore:
+      - group: ""
+        kind: ConfigMap
+        name: kube-root-ca.crt
+
+
+
+
+
+
+
