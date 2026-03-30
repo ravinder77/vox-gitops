@@ -1,8 +1,6 @@
 replicaCount: 2
 image:
-  repository: ravinder50300/vox-backend
-  pullPolicy: IfNotPresent
-  tag: "v1.0.1"
+  tag: "v1.0.1-rc"
 
 service:
   type: ClusterIP
