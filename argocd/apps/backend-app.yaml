@@ -3,13 +3,23 @@ kind: Application
 metadata:
   name: vox-backend
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd-image-updater.argoproj.io/image-list: backend=
-    argocd-image-updater.argoproj.io/backend.update-strategy: latest
+    argocd-image-updater.argoproj.io/image-list: backend=ravinder50300/vox-backend
+    argocd-image-updater.argoproj.io/backend.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/backend.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/backend.update-strategy: semver
     argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+  labels:
+    app.kubernetes.io/name: vox-backend
+    app.kubernetes.io/part-of: vox-platform
+    prometheus.io/scrape: "true"
+    environment: production
 
 spec:
-  project: default
+  project: vox-project
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
@@ -18,11 +28,34 @@ spec:
       valueFiles:
         - values.yaml
         - values-prod.yaml
+      parameters:
+        - name: image.tag
+          value: "1.0.0"     # overridden by ArgoCD Image Updater
   destination:
     server: https://kubernetes.default.svc
-    namespace: backend
-
+    namespace: vox-production
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas    # managed by HPA
+
+    - group: argoproj.io
+      kind: Rollout
+      jsonPointers:
+        - /spec/replicas    # managed by HPA
+  revisionHistoryLimit: 10
