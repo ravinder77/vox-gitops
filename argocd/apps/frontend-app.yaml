@@ -2,21 +2,53 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: vox-frontend
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd-image-updater.argoproj.io/image-list: ravinder50300/vox-frontend
+    argocd-image-updater.argoproj.io/frontend.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/frontend.helm.image-tag: image.tag
+    argocd-image-updater.argoproj.io/frontend.update-strategy: semver
+    argocd-image-updater.argoproj.io/write-back-method: git
+  labels:
+    app.kubernetes.io/name: vox-frontend
+    app.kubernetes.io/part-of: vox-platform
+    environment: production
 spec:
-  project: default
+  project: vox-platform
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
     path: helm/frontend
     helm:
       valueFiles:
+        - values.yaml
         - values-prod.yaml
-
+      parameters:
+        - name: image.tag
+          value: "1.0.0"
   destination:
     server: https://kubernetes.default.svc
-    namespace: frontend
-
+    namespace: vox-production
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+  revisionHistoryLimit: 10
