@@ -7,7 +7,7 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    argocd-image-updater.argoproj.io/image-list: ravinder50300/vox-frontend
+    argocd-image-updater.argoproj.io/image-list: frontend=ravinder50300/vox-frontend
     argocd-image-updater.argoproj.io/frontend.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/frontend.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/frontend.update-strategy: semver
@@ -28,7 +28,7 @@ spec:
         - values-prod.yaml
       parameters:
         - name: image.tag
-          value: "1.0.0"
+          value: "v1.0.1"
 
   destination:
     server: https://kubernetes.default.svc

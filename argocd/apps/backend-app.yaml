@@ -30,7 +30,7 @@ spec:
         - values-prod.yaml
       parameters:
         - name: image.tag
-          value: "1.0.0"     # overridden by ArgoCD Image Updater
+          value: "v1.0.1"     # overridden by ArgoCD Image Updater
   destination:
     server: https://kubernetes.default.svc
     namespace: vox-production
@@ -54,8 +54,4 @@ spec:
       jsonPointers:
         - /spec/replicas    # managed by HPA
 
-    - group: argoproj.io
-      kind: Rollout
-      jsonPointers:
-        - /spec/replicas    # managed by HPA
   revisionHistoryLimit: 10
