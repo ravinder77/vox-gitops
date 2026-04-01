@@ -5,6 +5,7 @@ metadata:
   namespace: argocd
 
 spec:
+  project: vox-project
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argo-rollouts

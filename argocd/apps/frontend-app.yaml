@@ -17,7 +17,7 @@ metadata:
     app.kubernetes.io/part-of: vox-platform
     environment: production
 spec:
-  project: vox-platform
+  project: vox-project
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
