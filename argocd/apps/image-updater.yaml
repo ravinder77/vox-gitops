@@ -3,14 +3,70 @@ kind: Application
 metadata:
   name: image-updater
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+  labels:
+    app.kubernetes.io/name: argocd-image-updater
+    app.kubernetes.io/part-of: vox-platform
 
 spec:
-  project: default
+  project: vox-project
 
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argocd-image-updater
-    targetRevision: 0.9.0
+    targetRevision: 0.9.x
+    helm:
+      releaseName: argocd-image-updater
+      values: |
+        replicaCount: 1
+        
+        config: 
+          # Write back method: git (commits updated image tags back to gitops repo)
+          argocd:
+            grpcWeb: true
+            serverAddress: argocd-server.argocd.svc.cluster.local
+            insecure: false
+            plainText: false
+        
+          loglevel: info
+        
+          # ECR registry configuration with IRSA
+          registries:
+            - name: ECR
+              prefix: ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
+              api_url: https://ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
+              credentials: ext:/scripts/ecr-login.sh
+              credsexpire: 10h
+        
+        authScripts:
+          enabled: true
+          scripts:
+            ecr-login.sh: |
+              #!/bin/sh
+              aws ecr get-login-password --region ap-south-1 | \
+              echo "AWS: $(cat)"
+        
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/argocd-image-updater-irsa
+        
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        
+          metrics: 
+            enabled: true
+            serviceMonitor:
+              enabled: true
+              namespace: monitoring
+            
 
   destination:
     server: https://kubernetes.default.svc
@@ -20,3 +76,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # argocd namespace already exists
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
