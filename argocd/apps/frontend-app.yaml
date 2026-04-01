@@ -54,5 +54,4 @@ spec:
       kind: Deployment
       jsonPointers:
         - /spec/replicas
-        -
   revisionHistoryLimit: 10
