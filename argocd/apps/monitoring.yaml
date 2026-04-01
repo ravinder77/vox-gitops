@@ -1,0 +1,188 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+
+spec:
+  project: vox-project
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 61.3.2
+    helm:
+      release-name: monitoring
+      values: |
+        fullnameOverride: monitoring
+        
+        # ------ Prometheus -------
+        prometheus:
+          prometheusSpec:
+            replicas: 2
+            retention: 15d
+            retentionSize: "10GB"
+            storageSpec:
+              volumeClaimTemplate:
+                spec:
+                  storageClassName: gp3
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 20Gi
+            resources:
+              requests:
+                cpu: 500m
+                memory: 2Gi
+              limits:
+                cpu: 2000m
+                memory: 8Gi
+            
+            podAntiAffinity: soft
+            topologySpreadConstraints:
+              - maxSkew: 1
+                topologyKey: kubernetes.io/hostname
+                whenUnsatisfiable: DoNotSchedule
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: prometheus
+        
+            
+            # ServiceMonitor selector - pick up all namespaces
+            serviceMonitorSelectorNilUseHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+          
+          serviceAccount:
+            annotations:
+              eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/prometheus-irsa-role
+               
+            
+        # ------ Alertmanager -------
+        alertmanager:
+          alertmanagerSpec:
+            replicas: 1
+            storage:
+              volumeClaimTemplate:
+                spec: 
+                  storageClassName: gp3
+                  accessModes: ["ReadWriteOnce"]
+                  resources:
+                    requests:
+                      storage: 5Gi
+            resources:
+              requests:
+                cpu: 50m
+                memory: 64Mi
+              limits:
+                cpu: 100m
+                memory: 256Mi
+        
+          config:
+            global:
+              resolve_timeout: 5m
+            route:
+              group_by: ["alertname", "namespace", "severity" ]
+              group_wait: 30s
+              group_interval: 5m
+              repeat_interval: 12h
+              receiver: "slack-critical"
+              routes:
+                - match: 
+                    severity: critical
+                  receiver: "pagerduty-critical"
+                - match: 
+                    severity: warning
+                  receiver: "slack-notifications"
+            receivers:
+              - name: "slack-notifications"
+                slack_configs:
+                  - api_url: "{{.SlackWebhookURL}}"  # injected via ExternalSecret
+                    channel: "#vox-alerts"
+                    title: "[{{.Status | toUpper}}] {{.CommonAnnotations.summary}}"
+                    text: "{{range .Alerts}}{{.Annotations.description}}\n{{end}}"
+              - name: "pagerduty-critical"  #
+                pagerduty_configs:
+                  - routing_key: "{{.PagerdutyKey}}"
+                
+        # ------Grafana --------
+        grafana:
+          enabled: true
+          replicas: 1
+          adminPassword: ""    # set via ExternalSecret
+          persistence:
+            enabled: true
+            storageClassName: gp3
+            size: 5Gi
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          
+          # Pre-load dashboards via ConfigMaps
+          sidecar:
+            dashboards:
+              enabled: true 
+              searchNamespace: ALL
+            datasources:
+              enabled: true
+          grafana.ini:
+            server:
+              root_url: https://grafana.vox.internal  
+            auth.generic_oauth:
+              enabled: false
+        
+        # ----- Node Exporter -----
+        nodeExporter:
+          enabled: true
+        
+        # ---- kube-state-metrics -----
+        kubeStateMetrics:
+          enabled: true
+        
+        # ----- Default Rules ------
+        defaultRules:
+          create: true
+          rules:
+            alertmanager: true
+            etcd: false                      # managed EKS - no etcd access
+            kubeApiserver: true 
+            kubeControllerManager: false     # managed EKS
+            kubeScheduler: false             # managed EKS
+            kubelet: true
+            kubeProxy: false                 # EKS uses VPC CNI
+            kubeStateMetrics: true
+            network: true
+            node: true
+            prometheus: true
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Replace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+          - /webhooks/0/clientConfig/caBundle
+
