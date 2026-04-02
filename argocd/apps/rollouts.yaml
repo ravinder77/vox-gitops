@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   project: vox
 
@@ -58,7 +58,6 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - Replace=true
-
 
 
 

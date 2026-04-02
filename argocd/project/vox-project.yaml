@@ -89,7 +89,6 @@ spec:
       groups:
         - vox-developers
 
-
     # ── Sync windows — no deploys on weekends ────────────────────
   syncWindows:
     - kind: allow

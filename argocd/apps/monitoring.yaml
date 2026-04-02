@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "-3"
 
 spec:
   project: vox
@@ -117,4 +117,3 @@ spec:
       kind: ValidatingWebhookConfiguration
       jsonPointers:
           - /webhooks/0/clientConfig/caBundle
-

@@ -8,11 +8,11 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  project: vox
+  project: default
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
-    path: argocd/apps
+    path: argocd
     directory:
       recurse: true
   destination:
