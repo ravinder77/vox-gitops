@@ -1,0 +1,19 @@
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: vox-frontend-tg
+  namespace: vox
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: vox-frontend
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPath: /healthz
+      healthyThresholdCount: 2
+      unhealthyThresholdCount: 3
+      healthCheckIntervalSeconds: 15

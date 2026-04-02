@@ -1,0 +1,16 @@
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: vox-backend-tg
+  namespace: vox
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: vox-backend-stable
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPath: /health

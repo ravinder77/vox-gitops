@@ -1,0 +1,28 @@
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: vox-alb-gateway
+  namespace: vox
+spec:
+  gatewayClassName: vox-alb
+  infrastructure:
+    parametersRef:
+      group: gateway.k8s.aws
+      kind: LoadBalancerConfiguration
+      name: vox-alb-config
+  listeners:
+    - name: frontend-http
+      protocol: HTTP
+      port: 80
+      hostname: frontend.vox.local
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: backend-http
+      protocol: HTTP
+      port: 80
+      hostname: api.vox.local
+      allowedRoutes:
+        namespaces:
+          from: Same
