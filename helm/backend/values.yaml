@@ -137,6 +137,12 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
+rollout:
+  strategy:
+    canary:
+      maxSurge: 25%
+      maxUnavailable: 0
+
 # Additional volumes on the output Deployment definition.
 volumes: []
   # - name: foo
