@@ -1,7 +1,0 @@
-replicaCount: 3
-image:
-  tag: "v1.0.1"
-
-service:
-  type: ClusterIP
-  port: 4000

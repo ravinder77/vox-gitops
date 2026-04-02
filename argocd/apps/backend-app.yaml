@@ -7,11 +7,12 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    argocd-image-updater.argoproj.io/image-list: backend=ravinder50300/vox-backend
+    # ArgoCD Image Updater: watch ECR for new image tags
+    argocd-image-updater.argoproj.io/image-list: backend=AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-backend
+    argocd-image-updater.argoproj.io/backend.update-strategy: semver
     argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
     argocd-image-updater.argoproj.io/backend.helm.image-name: image.repository
     argocd-image-updater.argoproj.io/backend.helm.image-tag: image.tag
-    argocd-image-updater.argoproj.io/backend.update-strategy: semver
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/git-branch: main
 
@@ -25,21 +26,10 @@ spec:
     helm:
       valueFiles:
         - values.yaml
-        - values-prod.yaml
-        -
-      parameters:
-        - name: image.repository
-          value: AWS_ACCOUNT_ID.dkr.ecr.AWS_REGION.amazonaws.com/vox-backend
-        - name: image.tag
-          value: "v1.0.1"     # overridden by ArgoCD Image Updater
-        - name: replicaCount
-          value: 2
-        - name: serviceAccount.annotations.eks\.amazonaws\.com/role-arn
-          value:  arn:aws:iam::AWS_ACCOUNT_ID:role/vox-backend-irsa-role
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: vox-production
+    namespace: vox
   syncPolicy:
     automated:
       prune: true
@@ -54,11 +44,16 @@ spec:
       backoff:
         duration: 10s
         factor: 2
-        maxDuration: 3m
+        maxDuration: 2m
   ignoreDifferences:
     - group: apps
       kind: Deployment
       jsonPointers:
         - /spec/replicas    # managed by HPA
+    - group: argoproj.io
+      kind: Rollout
+      jsonPointers:
+        - /spec/replicas
+
 
   revisionHistoryLimit: 10

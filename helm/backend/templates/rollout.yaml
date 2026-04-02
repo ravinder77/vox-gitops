@@ -1,0 +1,5 @@
+apiVersion: argoproj.io
+kind: Rollout
+metadata:
+
+spec:
