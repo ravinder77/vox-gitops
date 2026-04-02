@@ -1,0 +1,77 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: vox-alb
+spec:
+  controllerName: gateway.k8s.aws/alb
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: LoadBalancerConfiguration
+metadata:
+  name: vox-alb-config
+  namespace: vox
+spec:
+  loadBalancerName: vox-alb
+  scheme: internet-facing
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: vox-alb-gateway
+  namespace: vox
+spec:
+  gatewayClassName: vox-alb
+  infrastructure:
+    parametersRef:
+      group: gateway.k8s.aws
+      kind: LoadBalancerConfiguration
+      name: vox-alb-config
+  listeners:
+    - name: frontend-http
+      protocol: HTTP
+      port: 80
+      hostname: frontend.vox.local
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: backend-http
+      protocol: HTTP
+      port: 80
+      hostname: api.vox.local
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: vox-frontend-tg
+  namespace: vox
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: vox-frontend
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPath: /
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: vox-backend-tg
+  namespace: vox
+spec:
+  targetReference:
+    group: ""
+    kind: Service
+    name: vox-backend-stable
+  defaultConfiguration:
+    targetType: ip
+    protocol: HTTP
+    healthCheckConfig:
+      healthCheckProtocol: HTTP
+      healthCheckPath: /health

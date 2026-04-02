@@ -15,10 +15,13 @@ spec:
   sourceRepos:
     - https://github.com/ravinder77/vox-gitops.git
     - https://github.com/ravinder77/vox.git
+    - https://github.com/kubernetes-sigs/gateway-api.git
+    - https://github.com/kubernetes-sigs/aws-load-balancer-controller.git
     - https://charts.external-secrets.io
     - https://argoproj.github.io/argo-helm
     - https://prometheus-community.github.io/helm-charts
     - https://helm.nginx.com/stable
+    - https://aws.github.io/eks-charts
 
 # --------- Allowed destination clusters and namespaces ----
   destinations:
@@ -32,6 +35,8 @@ spec:
       namespace: external-secrets
     - server: https://kubernetes.default.svc
       namespace: argo-rollouts
+    - server: https://kubernetes.default.svc
+      namespace: kube-system
 
 
   # ── Namespace-scoped resources allowed ───────────────────────
@@ -108,7 +113,6 @@ spec:
       namespaces:
         - vox
       manualSync: false           # block even manual syncs on weekends
-
 
 
 
