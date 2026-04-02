@@ -15,16 +15,17 @@ spec:
     path: config/crd/gateway
     directory:
       recurse: true
+
   destination:
     server: https://kubernetes.default.svc
-    namespace: kube-system
+    namespace: argocd
   syncPolicy:
     automated:
-      prune: true
+      prune: false    #  never prune CRDs
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
-      - Replace=true
+      - ApplyOutOfSyncOnly=true
     retry:
       limit: 5
       backoff:

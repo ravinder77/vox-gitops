@@ -6,4 +6,3 @@ metadata:
 spec:
   loadBalancerName: vox-alb
   scheme: internet-facing
----

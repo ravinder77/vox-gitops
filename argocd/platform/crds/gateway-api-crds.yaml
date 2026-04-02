@@ -17,14 +17,14 @@ spec:
       recurse: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: kube-system
+    namespace: argocd
   syncPolicy:
     automated:
-      prune: true
+      prune: false   # CRDs should NOT be pruned automatically
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
-      - Replace=true
+      - ApplyOutOfSyncOnly=true
     retry:
       limit: 5
       backoff:
