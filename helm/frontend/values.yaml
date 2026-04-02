@@ -1,9 +1,9 @@
 # Default values for frontend.
 replicaCount: 1
 image:
-  repository: ravinder50300/vox-frontend
+  repository: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-frontend
   pullPolicy: IfNotPresent
-  tag: "v1.0.1"
+  tag: "v1.0.0"
 
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
