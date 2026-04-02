@@ -1,34 +1,31 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vox-frontend
+  name: vox-backend
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
-    argocd-image-updater.argoproj.io/image-list: frontend=AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-frontend
-    argocd-image-updater.argoproj.io/frontend.update-strategy: semver
-    argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
-    argocd-image-updater.argoproj.io/frontend.helm.image-name: image.repository
-    argocd-image-updater.argoproj.io/frontend.helm.image-tag: image.tag
+    argocd.argoproj.io/sync-wave: "2"
+    argocd-image-updater.argoproj.io/image-list: backend=AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-backend
+    argocd-image-updater.argoproj.io/backend.update-strategy: semver
+    argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^v[0-9]+\.[0-9]+\.[0-9]+$
+    argocd-image-updater.argoproj.io/backend.helm.image-name: image.repository
+    argocd-image-updater.argoproj.io/backend.helm.image-tag: image.tag
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/git-branch: main
-
 spec:
   project: vox
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
-    path: helm/frontend
+    path: helm/backend
     helm:
       valueFiles:
         - values.yaml
-
   destination:
     server: https://kubernetes.default.svc
     namespace: vox
-
   syncPolicy:
     automated:
       prune: true
@@ -44,7 +41,6 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 2m
-
   ignoreDifferences:
     - group: apps
       kind: Deployment
