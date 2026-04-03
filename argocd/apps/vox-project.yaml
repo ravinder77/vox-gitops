@@ -51,6 +51,8 @@ spec:
       kinds: [ "Gateway", "HTTPRoute", "ReferenceGrant" ]
     - group: gateway.k8s.aws
       kinds: [ "LoadBalancerConfiguration", "TargetGroupConfiguration" ]
+    - group: external-secrets.io
+      kinds: [ "ExternalSecret" ]
     - group: rbac.authorization.k8s.io
       kinds: [ "Role", "RoleBinding" ]
     - group: networking.k8s.io

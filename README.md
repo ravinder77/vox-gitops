@@ -1,27 +1,25 @@
 # vox-gitops
 
-GitOps repo for the Vox platform on EKS.
+GitOps repo for the Vox project on EKS.
 
 ## Structure
 
-- `argocd/bootstrap/`: bootstrap objects that let Argo manage this repo itself
-- `argocd/apps/`: top-level parent applications for the core, platform, and workload layers
-- `helm/`: workload Helm charts
-- `platform/`: shared infrastructure manifests applied through Argo
-- `scripts/`: helper scripts
+- `argocd/bootstrap/`: root Argo CD bootstrap application
+- `argocd/apps/`: Argo CD applications and the `vox` AppProject
+- `platform/gateway/`: shared Gateway API and AWS ALB resources
+- `platform/security/`: IRSA service accounts, External Secrets, and network policies
+- `helm/backend/`: backend workload chart
+- `helm/frontend/`: frontend workload chart
 
 ## Deployment Flow
 
-1. Apply the root application from `argocd/bootstrap/root-app.yaml`.
-2. The root application syncs `argocd/apps/`.
-3. `argocd/apps/core.yaml` installs the `vox` project and shared controllers such as monitoring, rollouts, external-secrets, image-updater, and the AWS load balancer controller.
-4. `argocd/apps/platform.yaml` deploys shared platform resources such as the Gateway API configuration and the external-secrets `ClusterSecretStore`.
-5. `argocd/apps/workloads.yaml` deploys the frontend and backend charts from `helm/`.
+1. Apply [`argocd/bootstrap/root-app.yaml`](/Users/ravinder/Projects/vox-gitops/argocd/bootstrap/root-app.yaml).
+2. Argo syncs [`argocd/apps`](/Users/ravinder/Projects/vox-gitops/argocd/apps).
+3. Shared controllers and platform resources deploy first.
+4. Backend and frontend charts deploy into the `vox` namespace.
 
-## Architecture
+## Notes
 
-- `core`: cluster-wide operators and Argo CD project policy
-- `platform`: shared networking and security primitives used by workloads
-- `workloads`: application delivery only
-
-This keeps the GitOps control flow simple: bootstrap Argo once, then let parent apps fan out by responsibility instead of mixing controllers, infrastructure, and workloads in a single folder.
+- Workloads are expected to run in the `vox` namespace.
+- `platform/security/` is wired to the active Argo `security` application and uses recursive directory sync.
+- Placeholder values like `AWS_ACCOUNT_ID` still need to be replaced with real environment-specific values before production use.
