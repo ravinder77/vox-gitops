@@ -23,8 +23,8 @@ spec:
           # Use ECR as the registry
           registries:
             - name: ECR ap-south-1
-              api_url: https://<aws-account-id>.dkr.ecr.ap-south-1.amazonaws.com
-              prefix: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
+              api_url: https://${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com
+              prefix: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com
               ping: yes
               insecure: no
               credentials: ext:/scripts/ecr-login.sh

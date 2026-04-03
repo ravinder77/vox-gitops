@@ -1,0 +1,75 @@
+# Allow backend pods egress to RDS (PostgreSQL port 5432)
+# RDS lives outside the cluster — matched by IP block (VPC CIDR)
+# Production
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-rds
+  namespace: production
+  labels:
+    app.kubernetes.io/component: security
+    app.kubernetes.io/managed-by: argocd
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/16      # VPC CIDR — update to match your Terraform VPC output
+            except:
+              - 10.0.0.0/24        # Exclude public subnets
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Staging
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-rds
+  namespace: staging
+  labels:
+    app.kubernetes.io/component: security
+    app.kubernetes.io/managed-by: argocd
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+            except:
+              - 10.0.0.0/24
+      ports:
+        - protocol: TCP
+          port: 5432
+---
+# Allow backend pods egress to AWS services (Secrets Manager, ECR, etc.)
+# via VPC endpoints — stays within VPC CIDR
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-aws-endpoints
+  namespace: production
+  labels:
+    app.kubernetes.io/component: security
+    app.kubernetes.io/managed-by: argocd
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

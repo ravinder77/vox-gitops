@@ -3,31 +3,46 @@ kind: Application
 metadata:
   name: security
   namespace: argocd
+  labels:
+    app.kubernetes.io/name: platform-security
+    app.kubernetes.io/component: security
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"   # Sync before workloads
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "-4"
 spec:
-  project: vox
+  project: vox-platform
+
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
     path: platform/security
-    directory:
-      recurse: true
+
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    # namespace intentionally omitted — manifests declare their own namespaces
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+      allowEmpty: false
     syncOptions:
       - CreateNamespace=true
-      - ServerSideApply=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
         duration: 10s
         factor: 2
-        maxDuration: 2m
+        maxDuration: 3m
+
+  # Ignore annotation changes that ESO writes back to secrets
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      jsonPointers:
+        - /metadata/annotations
+        - /metadata/resourceVersion
