@@ -6,7 +6,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "-4"
+    argocd.argoproj.io/sync-wave: "-5"
 
 spec:
   description: Vox GitOps Project — production workloads on EKS ap-south-1
@@ -48,7 +48,9 @@ spec:
     - group: argoproj.io
       kinds: [ "Rollout", "AnalysisTemplate", "ClusterAnalysisTemplate" ]
     - group: gateway.networking.k8s.io
-      kinds: [ "HTTPRoute", "ReferenceGrant" ]
+      kinds: [ "Gateway", "HTTPRoute", "ReferenceGrant" ]
+    - group: gateway.k8s.aws
+      kinds: [ "LoadBalancerConfiguration", "TargetGroupConfiguration" ]
     - group: rbac.authorization.k8s.io
       kinds: [ "Role", "RoleBinding" ]
     - group: networking.k8s.io
@@ -76,8 +78,6 @@ spec:
       kind: ClusterSecretStore
     - group: gateway.networking.k8s.io
       kind: GatewayClass
-    - group: gateway.networking.k8s.io
-      kind: Gateway
 
 
  # ---- RBAC Roles -----
@@ -131,4 +131,3 @@ spec:
 
   orphanedResources:
     warn: true
-

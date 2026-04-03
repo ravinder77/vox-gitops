@@ -6,9 +6,6 @@ GitOps repo for the Vox platform on EKS.
 
 - `argocd/bootstrap/`: bootstrap objects that let Argo manage this repo itself
 - `argocd/apps/`: top-level parent applications for the core, platform, and workload layers
-- `argocd/core/`: shared controllers and the `vox` Argo CD project
-- `argocd/platform/`: Argo applications that deploy shared cluster plumbing from `platform/`
-- `argocd/workloads/`: workload `Application` manifests
 - `helm/`: workload Helm charts
 - `platform/`: shared infrastructure manifests applied through Argo
 - `scripts/`: helper scripts

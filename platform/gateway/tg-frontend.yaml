@@ -13,7 +13,7 @@ spec:
     protocol: HTTP
     healthCheckConfig:
       healthCheckProtocol: HTTP
-      healthCheckPath: /healthz
+      healthCheckPath: /
       healthyThresholdCount: 2
       unhealthyThresholdCount: 3
       healthCheckIntervalSeconds: 15
