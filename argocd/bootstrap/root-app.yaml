@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
-    path: argocd/app-of-apps
+    path: argocd/apps
     directory:
       recurse: true
   destination:
