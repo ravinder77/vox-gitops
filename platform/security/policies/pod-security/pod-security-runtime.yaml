@@ -13,7 +13,7 @@ spec:
   validations:
     # 1️⃣ readOnlyRootFilesystem for all containers
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
           has(c.securityContext) &&
           has(c.securityContext.readOnlyRootFilesystem) &&
@@ -43,7 +43,7 @@ spec:
 
     # 4️⃣ Seccomp profile (pod-level OR container-level)
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         (
           (
             has(object.spec.securityContext) &&

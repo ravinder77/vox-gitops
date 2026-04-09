@@ -12,7 +12,7 @@ spec:
 
   validations:
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         has(object.metadata.labels) &&
         has(object.metadata.labels["app.kubernetes.io/name"]) &&
         has(object.metadata.labels["app.kubernetes.io/version"]) &&

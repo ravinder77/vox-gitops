@@ -20,6 +20,7 @@ spec:
     - https://charts.external-secrets.io
     - https://argoproj.github.io/argo-helm
     - https://prometheus-community.github.io/helm-charts
+    - https://kyverno.github.io/kyverno
     - https://helm.nginx.com/stable
     - https://aws.github.io/eks-charts
 
@@ -37,6 +38,8 @@ spec:
       namespace: argo-rollouts
     - server: https://kubernetes.default.svc
       namespace: kube-system
+    - server: https://kubernetes.default.svc
+      namespace: kyverno
 
 
   # ── Namespace-scoped resources allowed ───────────────────────
@@ -45,18 +48,26 @@ spec:
       kinds: [ "Service", "ConfigMap", "Secret", "PersistentVolumeClaim" , "ServiceAccount"]
     - group: apps
       kinds: [ "Deployment", "StatefulSet" ]
+    - group: autoscaling
+      kinds: [ "HorizontalPodAutoscaler" ]
     - group: argoproj.io
       kinds: [ "Rollout", "AnalysisTemplate", "ClusterAnalysisTemplate" ]
     - group: gateway.networking.k8s.io
       kinds: [ "Gateway", "HTTPRoute", "ReferenceGrant" ]
     - group: gateway.k8s.aws
       kinds: [ "LoadBalancerConfiguration", "TargetGroupConfiguration" ]
+    - group: elbv2.k8s.aws
+      kinds: [ "TargetGroupBinding" ]
     - group: external-secrets.io
       kinds: [ "ExternalSecret" ]
+    - group: monitoring.coreos.com
+      kinds: [ "ServiceMonitor" ]
     - group: rbac.authorization.k8s.io
       kinds: [ "Role", "RoleBinding" ]
     - group: networking.k8s.io
       kinds: [ "NetworkPolicy" ]
+    - group: policy
+      kinds: [ "PodDisruptionBudget" ]
 
   # ── Deny list — never deploy these ───────────────────────────
   namespaceResourceBlacklist:
@@ -66,6 +77,8 @@ spec:
       kind: LimitRange
 
   clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
     - group: rbac.authorization.k8s.io
       kind: ClusterRole
     - group: rbac.authorization.k8s.io
@@ -80,6 +93,12 @@ spec:
       kind: ClusterSecretStore
     - group: gateway.networking.k8s.io
       kind: GatewayClass
+    - group: policies.kyverno.io
+      kind: ValidatingPolicy
+    - group: policies.kyverno.io
+      kind: GeneratingPolicy
+    - group: policies.kyverno.io
+      kind: ImageValidatingPolicy
 
 
  # ---- RBAC Roles -----
@@ -115,8 +134,8 @@ spec:
       schedule: "0 9 * * 1-5"    # Mon-Fri 09:00
       duration: 8h
       applications:
-        - "backend-*"
-        - "frontend-*"
+        - "vox-backend"
+        - "vox-frontend"
       namespaces:
         - vox
       manualSync: true    # allow manual override in emergencies
@@ -125,8 +144,8 @@ spec:
       schedule: "0 0 * * 6,0"   # Sat–Sun all day
       duration: 48h
       applications:
-        - "backend-*"
-        - "frontend-*"
+        - "vox-backend"
+        - "vox-frontend"
       namespaces:
         - vox
       manualSync: false           # block even manual syncs on weekends

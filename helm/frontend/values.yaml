@@ -1,6 +1,6 @@
 image:
   repository: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-frontend   # ← update
-  tag: latest
+  tag: 0.0.0
   pullPolicy: IfNotPresent
 
 replicaCount: 2
@@ -37,6 +37,27 @@ probes:
 env:
   NODE_ENV: production
   PORT: "3001"
+
+podLabels:
+  app.kubernetes.io/part-of: vox
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  privileged: false
+  runAsNonRoot: true
+  runAsUser: 10001
+  capabilities:
+    drop:
+      - ALL
 
 envFromSecret: vox-frontend-secrets   # from platform/security/external-secrets/app-secrets.yaml
 

@@ -22,10 +22,16 @@ spec:
     metadata:
       labels:
         {{ include "vox-backend.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       annotations:
         # Force pod restart when secret changes
-        checksum/secret: {{ include (print $.Template.BasePath "/secret-hash.yaml") . | sha256sum }}
+        checksum/secret: {{ include "vox-backend.secretRef" . | sha256sum }}
     spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       serviceAccountName: {{ include "vox-backend.fullname" . }}
 
       containers:
@@ -61,6 +67,8 @@ spec:
 
           resources:
             {{ toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
 
       {{- with .Values.affinity }}
       affinity:

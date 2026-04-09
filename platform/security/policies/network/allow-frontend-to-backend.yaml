@@ -9,19 +9,19 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: backend
+      app.kubernetes.io/name: vox-backend
       app.kubernetes.io/instance: vox-backend
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: frontend
+          matchLabels:
+              app.kubernetes.io/name: vox-frontend
               app.kubernetes.io/instance: vox-frontend
       ports:
         - protocol: TCP
-          port: 80
+          port: 4000
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -34,7 +34,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: frontend
+      app.kubernetes.io/name: vox-frontend
       app.kubernetes.io/instance: vox-frontend
   policyTypes:
     - Egress
@@ -42,8 +42,8 @@ spec:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: backend
+              app.kubernetes.io/name: vox-backend
               app.kubernetes.io/instance: vox-backend
       ports:
         - protocol: TCP
-          port: 80
+          port: 4000

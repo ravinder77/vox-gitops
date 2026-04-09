@@ -1,0 +1,13 @@
+---
+- name: Bootstrap EKS operator host
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Verify required CLIs are installed
+      ansible.builtin.command: "{{ item }} version"
+      changed_when: false
+      loop:
+        - kubectl
+        - helm
+        - aws

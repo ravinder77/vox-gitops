@@ -10,6 +10,8 @@ GitOps repo for the Vox project on EKS.
 - `platform/security/`: IRSA service accounts, External Secrets, and network policies
 - `helm/backend/`: backend workload chart
 - `helm/frontend/`: frontend workload chart
+- `ansible/`: operator and node bootstrap playbooks
+- `scripts/`: bootstrap, validation, and teardown helpers
 
 ## Deployment Flow
 
@@ -23,3 +25,4 @@ GitOps repo for the Vox project on EKS.
 - Workloads are expected to run in the `vox` namespace.
 - `platform/security/` is wired to the active Argo `security` application and uses recursive directory sync.
 - Placeholder values like `AWS_ACCOUNT_ID` still need to be replaced with real environment-specific values before production use.
+- Run [`scripts/validate-manifests.sh`](/Users/ravinder/Projects/vox-gitops/scripts/validate-manifests.sh) before pushing manifest changes.

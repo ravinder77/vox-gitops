@@ -13,7 +13,7 @@ spec:
   validations:
     # 1. All containers must have a tag OR digest
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
           c.image.contains(":") || c.image.contains("@sha256:")
         )
@@ -21,7 +21,7 @@ spec:
 
     # 2. Disallow :latest explicitly
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
           !c.image.endsWith(":latest")
         )

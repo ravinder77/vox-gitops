@@ -13,7 +13,7 @@ spec:
   validations:
     # 1️⃣ Disallow privilege escalation
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
           has(c.securityContext) &&
           has(c.securityContext.allowPrivilegeEscalation) &&
@@ -23,7 +23,7 @@ spec:
 
     # 2️⃣ Must not run as root
     - expression: >
-        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
           has(c.securityContext) &&
           (

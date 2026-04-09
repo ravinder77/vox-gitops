@@ -43,7 +43,7 @@ spec:
     - name: vox-platform-view
       match:
         expression: >
-          object.metadata.name in ["vox-backend", "vox-frontend"]
+          object.metadata.name == "vox"
       synchronize: true
 
       resource:
@@ -79,7 +79,7 @@ spec:
 
   validations:
     - expression: >
-        !(object.metadata.namespace in ["vox-backend", "vox-frontend"]) ||
+        object.metadata.namespace != "vox" ||
         object.rules.all(r,
           !r.verbs.exists(v, v == "*")
         )

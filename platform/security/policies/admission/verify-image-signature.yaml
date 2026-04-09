@@ -14,7 +14,7 @@ spec:
         resources: ["pods"]
 
   matchImageReferences:
-    - glob: "123456789012.dkr.ecr.ap-south-1.amazonaws.com/vox-*:*"
+    - glob: "AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-*:*"
 
   attestors:
     - name: cosign

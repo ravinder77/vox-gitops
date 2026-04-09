@@ -1,0 +1,2 @@
+---
+kubelet_extra_args: "--node-labels=workload=vox"

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vox
+  labels:
+    gateway-access: "true"
+    network-policy: default-deny
+    app.kubernetes.io/part-of: vox
+    app.kubernetes.io/managed-by: argocd

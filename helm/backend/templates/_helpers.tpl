@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{ define "vox-backend.name" -}}
-{{ default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -10,13 +10,13 @@ Create a default fully qualified app name.
 */}}
 {{ define "vox-backend.fullname" -}}
 {{- if .Values.fullnameOverride }}
-{{ .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
-{{ .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{ printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -46,4 +46,11 @@ Chart label
 */}}
 {{ define "vox-backend.chart" -}}
 {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/*
+Return a stable secret reference string for rollout checksum annotations.
+*/}}
+{{- define "vox-backend.secretRef" -}}
+{{- printf "secretRef:%s" .Values.envFromSecret -}}
 {{- end }}

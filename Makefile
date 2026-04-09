@@ -47,15 +47,15 @@ sync-status: ## Show all ArgoCD application sync statuses
 
 ## ── Rollout status ──────────────────────────────────────────────────────────
 rollout-status: ## Show Argo Rollouts status for backend and frontend
-	kubectl argo rollouts get rollout vox-backend -n vox-backend --watch &
-	kubectl argo rollouts get rollout vox-frontend -n vox-frontend --watch
+	kubectl argo rollouts get rollout vox-backend -n vox --watch &
+	kubectl argo rollouts get rollout vox-frontend -n vox --watch
 
 ## ── Promote canary ──────────────────────────────────────────────────────────
 promote-backend: ## Manually promote backend canary to stable
-	kubectl argo rollouts promote vox-backend -n vox-backend
+	kubectl argo rollouts promote vox-backend -n vox
 
 abort-backend: ## Abort backend canary and rollback
-	kubectl argo rollouts abort vox-backend -n vox-backend
+	kubectl argo rollouts abort vox-backend -n vox
 
 ## ── Port-forward Prometheus/Grafana ─────────────────────────────────────────
 port-forward-grafana: ## Port-forward Grafana to localhost:3000
@@ -65,7 +65,7 @@ port-forward-prometheus: ## Port-forward Prometheus to localhost:9090
 	kubectl port-forward svc/kube-prometheus-stack-prometheus -n monitoring 9090:9090
 
 port-forward-rollouts: ## Port-forward Argo Rollouts dashboard to localhost:3100
-	kubectl argo rollouts dashboard -n vox-backend
+	kubectl argo rollouts dashboard -n vox
 
 ## ── Secrets debugging ────────────────────────────────────────────────────────
 check-secrets: ## Check ExternalSecret sync status
