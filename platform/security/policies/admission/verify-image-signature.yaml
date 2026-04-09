@@ -1,0 +1,52 @@
+apiVersion: policies.kyverno.io/v1
+kind: ImageValidatingPolicy
+metadata:
+  name: verify-vox-images
+spec:
+  failurePolicy: Fail
+  validationActions: [Deny]
+
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+
+  matchImageReferences:
+    - glob: "123456789012.dkr.ecr.ap-south-1.amazonaws.com/vox-*:*"
+
+  attestors:
+    - name: cosign
+      cosign:
+        keyless:
+          identities:
+            - subject: "https://github.com/ravinder77/vox/.github/workflows/docker-publish.yaml@refs/heads/main"
+              issuer: "https://token.actions.githubusercontent.com"
+        ctlog:
+          url: "https://rekor.sigstore.dev"
+
+  attestations:
+    - name: sbom
+      intoto:
+        type: https://spdx.dev/Document
+
+  validationConfigurations:
+    mutateDigest: true
+    verifyDigest: true
+    required: true
+
+  validations:
+    # 🔐 Signature verification
+    - expression: >
+        images.containers.map(image,
+          verifyImageSignatures(image, [attestors.cosign])
+        ).all(e, e > 0)
+      message: "Image signature verification failed (Cosign)."
+
+    # 📦 SBOM attestation verification
+    - expression: >
+        images.containers.map(image,
+          verifyAttestationSignatures(image, attestations.sbom, [attestors.cosign])
+        ).all(e, e > 0)
+      message: "SBOM attestation verification failed."

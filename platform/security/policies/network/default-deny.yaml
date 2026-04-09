@@ -1,0 +1,46 @@
+apiVersion: policies.kyverno.io/v1
+kind: GeneratingPolicy
+metadata:
+  name: add-default-deny-networkpolicy
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["namespaces"]
+
+  generate:
+    - name: default-deny-ingress
+      synchronize: true
+      match:
+        expression: >
+          has(object.metadata.labels) &&
+          object.metadata.labels["network-policy"] == "default-deny"
+      resource:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          name: default-deny-ingress
+          namespace: "{{ object.metadata.name }}"
+        spec:
+          podSelector: {}
+          policyTypes:
+            - Ingress
+
+    - name: default-deny-egress
+      synchronize: true
+      match:
+        expression: >
+          has(object.metadata.labels) &&
+          object.metadata.labels["network-policy"] == "default-deny"
+      resource:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        metadata:
+          name: default-deny-egress
+          namespace: "{{ object.metadata.name }}"
+        spec:
+          podSelector: {}
+          policyTypes:
+            - Egress

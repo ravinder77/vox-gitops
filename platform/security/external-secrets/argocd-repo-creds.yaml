@@ -3,33 +3,39 @@ kind: ExternalSecret
 metadata:
   name: argocd-repo-creds
   namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-repo-creds
-    app.kubernetes.io/component: security
-    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    # ArgoCD looks for Secrets with label argocd.argoproj.io/secret-type: repo-creds
+    # This ExternalSecret creates that Secret from AWS Secrets Manager
 spec:
-  refreshInterval: 1h
+  refreshInterval: 24h
+
   secretStoreRef:
     name: aws-secrets-manager
     kind: ClusterSecretStore
+
   target:
-    name: argocd-repo-creds-vox
+    name: argocd-repo-creds
     creationPolicy: Owner
     template:
+      type: Opaque
       metadata:
         labels:
-          argocd.argoproj.io/secret-type: repo-creds
+          argocd.argoproj.io/secret-type: repo-creds   # ArgoCD watches for this label
       data:
+        # Template using values fetched from remoteRef below
         type: git
         url: https://github.com/ravinder77
         username: "{{ .username }}"
-        password: "{{ .token }}"
+        password: "{{ .password }}"   # GitHub PAT or Deploy Key
+
   data:
     - secretKey: username
       remoteRef:
-        key: vox/argocd/repo-creds
+        key: vox/argocd/github-creds
         property: username
-    - secretKey: token
+
+    - secretKey: password
       remoteRef:
-        key: vox/argocd/repo-creds
+        key: vox/argocd/github-creds
         property: token

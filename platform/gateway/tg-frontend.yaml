@@ -1,19 +1,40 @@
-apiVersion: gateway.k8s.aws/v1beta1
-kind: TargetGroupConfiguration
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: vox-frontend-tg
-  namespace: vox
+  name: vox-frontend-route
+  namespace: vox-frontend
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
 spec:
-  targetReference:
-    group: ""
-    kind: Service
+  parentRefs:
+    - name: vox-gateway
+      namespace: vox-backend    # Gateway lives in vox-backend namespace
+      sectionName: https
+
+  hostnames:
+    - "vox.example.com"   # ← update
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: vox-frontend       # references Service created by helm/frontend chart
+          namespace: vox-frontend
+          port: 3001
+          weight: 100
+
+---
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: vox-frontend-tgb
+  namespace: vox-frontend
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  serviceRef:
     name: vox-frontend
-  defaultConfiguration:
-    targetType: ip
-    protocol: HTTP
-    healthCheckConfig:
-      healthCheckProtocol: HTTP
-      healthCheckPath: /
-      healthyThresholdCount: 2
-      unhealthyThresholdCount: 3
-      healthCheckIntervalSeconds: 15
+    port: 3001
+  targetType: ip

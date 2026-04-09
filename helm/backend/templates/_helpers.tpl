@@ -1,60 +1,49 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "backend.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
+{{ define "vox-backend.name" -}}
+{{ default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- end }}
 
 {{/*
 Create a default fully qualified app name.
 */}}
-{{- define "backend.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
+{{ define "vox-backend.fullname" -}}
+{{- if .Values.fullnameOverride }}
+{{ .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- if contains $name .Release.Name }}
+{{ .Release.Name | trunc 63 | trimSuffix "-" }}
+{{- else }}
+{{ printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+{{- end }}
+{{- end }}
 
 {{/*
-Create chart name and version as used by the chart label.
+Common labels
 */}}
-{{- define "backend.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
-Common labels.
-*/}}
-{{- define "backend.labels" -}}
-helm.sh/chart: {{ include "backend.chart" . }}
-{{ include "backend.selectorLabels" . }}
+{{ define "vox-backend.labels" -}}
+helm.sh/chart: {{ include "vox-backend.chart" . }}
+{{ include "vox-backend.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- end -}}
+{{- end }}
 
 {{/*
-Selector labels.
+Selector labels
 */}}
-{{- define "backend.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "backend.name" . }}
+{{ define "vox-backend.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "vox-backend.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end -}}
+{{- end }}
 
 {{/*
-Create the name of the service account to use.
+Chart label
 */}}
-{{- define "backend.serviceAccountName" -}}
-{{- if .Values.serviceAccount.create -}}
-{{- default (include "backend.fullname" .) .Values.serviceAccount.name -}}
-{{- else -}}
-{{- default "default" .Values.serviceAccount.name -}}
-{{- end -}}
-{{- end -}}
+{{ define "vox-backend.chart" -}}
+{{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
+{{- end }}

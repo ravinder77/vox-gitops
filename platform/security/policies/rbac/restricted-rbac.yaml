@@ -1,0 +1,86 @@
+# Disallow cluster-admin bindings
+
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-cluster-admin-binding
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["rolebindings", "clusterrolebindings"]
+
+  validations:
+    - expression: >
+        request.object.roleRef.name != "cluster-admin" ||
+        (
+          request.object.subjects.exists(s,
+            s.kind == "ServiceAccount" &&
+            s.name == "argocd-server" &&
+            s.namespace == "argocd"
+          )
+        )
+      message: "Binding to cluster-admin is not allowed except for approved system identities."
+
+
+---
+
+apiVersion: policies.kyverno.io/v1
+kind: GeneratingPolicy
+metadata:
+  name: generate-readonly-rolebinding
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE"]
+        resources: ["namespaces"]
+
+  generate:
+    - name: vox-platform-view
+      match:
+        expression: >
+          object.metadata.name in ["vox-backend", "vox-frontend"]
+      synchronize: true
+
+      resource:
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: RoleBinding
+        metadata:
+          name: vox-platform-view
+          namespace: "{{ object.metadata.name }}"
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: view
+        subjects:
+          - kind: Group
+            apiGroup: rbac.authorization.k8s.io
+            name: vox-platform-team
+
+---
+
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-wildcard-verbs
+spec:
+  validationActions: [Audit]
+
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["rbac.authorization.k8s.io"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["roles", "clusterroles"]
+
+  validations:
+    - expression: >
+        !(object.metadata.namespace in ["vox-backend", "vox-frontend"]) ||
+        object.rules.all(r,
+          !r.verbs.exists(v, v == "*")
+        )
+      message: "Wildcard verbs (*) are not allowed. Use explicit verbs."

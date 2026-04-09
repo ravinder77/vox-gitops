@@ -1,29 +1,59 @@
+# Stable service — receives 100% traffic during normal operation
+# During canary: receives (100 - canary weight)% of traffic
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "backend.fullname" . }}-stable
+  name: {{ include "vox-backend.fullname" . }}-stable
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{ include "backend.labels" . | nindent 4 }}
+    {{ include "vox-backend.labels" . | nindent 4 }}
+    rollouts-pod-template-hash: stable
 spec:
   type: {{ .Values.service.type }}
+  selector:
+    {{ include "vox-backend.selectorLabels" . | nindent 4 }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
-  selector:
-    {{ include "backend.selectorLabels" . | nindent 4 }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
 
 ---
-
+# Canary service — Argo Rollouts injects pod-template-hash selector automatically
+# During canary: receives (canary weight)% of traffic via ALB weighted target groups
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "backend.fullname" . }}-canary
+  name: {{ include "vox-backend.fullname" . }}-canary
+  namespace: {{ .Release.Namespace }}
   labels:
-    {{ include "backend.labels" . | nindent 4 }}
+    {{ include "vox-backend.labels" . | nindent 4 }}
+    rollouts-pod-template-hash: canary
 spec:
   type: {{ .Values.service.type }}
+  selector:
+    {{ include "vox-backend.selectorLabels" . | nindent 4 }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http
+
+---
+# Main service alias — used by HTTPRoute backendRef and internal cluster traffic
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "vox-backend.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "vox-backend.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
   selector:
-    {{ include "backend.selectorLabels" . | nindent 4 }}
+    {{ include "vox-backend.selectorLabels" . | nindent 4 }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
+      name: http

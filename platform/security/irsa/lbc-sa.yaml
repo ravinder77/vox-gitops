@@ -4,8 +4,9 @@ metadata:
   name: aws-load-balancer-controller
   namespace: kube-system
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/vox-lbc-irsa
+    eks.amazonaws.com/role-arn: arn:aws:iam::AWS_ACCOUNT_ID:role/vox-aws-lbc-irsa-role
     eks.amazonaws.com/token-expiration: "86400"
+    eks.amazonaws.com/audience: sts.amazonaws.com
   labels:
     app.kubernetes.io/name: aws-load-balancer-controller
     app.kubernetes.io/component: security

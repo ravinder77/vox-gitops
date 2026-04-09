@@ -9,7 +9,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: backend
+      app.kubernetes.io/name: vox-backend
       app.kubernetes.io/instance: vox-backend
   policyTypes:
     - Egress
@@ -32,7 +32,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: backend
+      app.kubernetes.io/name: vox-backend
       app.kubernetes.io/instance: vox-backend
   policyTypes:
     - Egress

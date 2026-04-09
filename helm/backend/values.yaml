@@ -1,131 +1,82 @@
-
-
-replicaCount: 2
+# vox-backend Helm values
+# Image tag is managed by ArgoCD Image Updater — it writes back to this file
+# via git commit on the main branch after detecting a new ECR digest.
 
 image:
-  repository: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-backend
+  repository: AWS_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/vox-backend   # ← update account ID
+  tag: latest    # managed by argocd-image-updater
   pullPolicy: IfNotPresent
-  tag: "v1.0.0"
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+# Replicas managed by Argo Rollouts — set here but ignored during canary
+replicaCount: 2
 
-# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
-serviceAccount:
-  create: true
-  automount: true
-  name: "vox-backend"
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/vox-backend-irsa
-
-
-podAnnotations: {}
-# This is for setting Kubernetes Labels to a Pod.
-# For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
-podLabels: {}
-
-podSecurityContext: {}
-  # fsGroup: 2000
-
-securityContext:
-   capabilities:
-     drop:
-     - ALL
-   readOnlyRootFilesystem: true
-   runAsNonRoot: true
-   runAsUser: 1000
-
-# This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
   type: ClusterIP
-  port: 80
+  port: 4000
+  targetPort: 4000
 
-# Expose the service via Gateway API HTTPRoute.
-# Requires Gateway API CRDs and a compatible controller in the cluster.
-httpRoute:
-  enabled: true
-  annotations: {}
-  parentRefs:
-  - group: gateway.networking.k8s.io
-    kind: Gateway
-    name: vox-alb-gateway
-    sectionName: backend-http
-  # Hostnames matching HTTP header.
-  hostnames:
-  - api.vox.local
-  # List of rules and filters applied.
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-  #   filters:
-  #   - type: RequestHeaderModifier
-  #     requestHeaderModifier:
-  #       set:
-  #       - name: My-Overwrite-Header
-  #         value: this-is-the-only-value
-  #       remove:
-  #       - User-Agent
-  # - matches:
-  #   - path:
-  #       type: PathPrefix
-  #       value: /echo
-  #     headers:
-  #     - name: version
-  #       value: v2
+# Resource requests/limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 
-resources: {}
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
-
-livenessProbe:
-  httpGet:
-    path: /health
-    port: http
-readinessProbe:
-  httpGet:
-    path: /ready
-    port: http
-
-autoscaling:
+# Horizontal Pod Autoscaler
+hpa:
   enabled: true
   minReplicas: 2
-  maxReplicas: 5
+  maxReplicas: 10
   targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
 
-rollout:
+# Liveness and readiness probes
+probes:
+  liveness:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 20
+  readiness:
+    path: /ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+# Environment variables (non-secret)
+env:
+  NODE_ENV: production
+  PORT: "4000"
+  LOG_LEVEL: info
+
+# Secret env vars injected from ESO-managed Kubernetes Secret
+# See: platform/security/external-secrets/app-secrets.yaml
+envFromSecret: vox-app-secrets    # must match ExternalSecret target.name
+
+# ServiceMonitor for Prometheus scraping
+serviceMonitor:
   enabled: true
-  strategy:
-    canary:
-      steps:
-        - setWeight: 20
-        - pause: { duration: 60 }
-        - setWeight: 50
-        - pause: { duration: 120 }
-        - setWeight: 80
+  namespace: monitoring
+  interval: 30s
+  path: /metrics
 
+# Pod disruption budget
+pdb:
+  enabled: true
+  minAvailable: 1
 
-# Additional volumes on the output Deployment definition.
-volumes: []
-  # - name: foo
-  #   secret:
-  #     secretName: mysecret
-  #     optional: false
+# Node affinity — prefer on-demand nodes for backend
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: eks.amazonaws.com/capacityType
+              operator: In
+              values:
+                - ON_DEMAND
 
-# Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-  # - name: foo
-  #   mountPath: "/etc/foo"
-  #   readOnly: true
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
+# Namespace label required for Gateway allowedRoutes selector
+namespaceLabels:
+  gateway-access: "true"

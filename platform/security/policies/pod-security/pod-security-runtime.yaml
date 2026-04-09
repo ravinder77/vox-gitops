@@ -1,0 +1,80 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: pod-security-runtime
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+
+  validations:
+    # 1️⃣ readOnlyRootFilesystem for all containers
+    - expression: >
+        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.spec.containers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.readOnlyRootFilesystem) &&
+          c.securityContext.readOnlyRootFilesystem == true
+        )
+      message: "All containers must set readOnlyRootFilesystem=true."
+
+    # 2️⃣ initContainers
+    - expression: >
+        !has(object.spec.initContainers) ||
+        object.spec.initContainers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.readOnlyRootFilesystem) &&
+          c.securityContext.readOnlyRootFilesystem == true
+        )
+      message: "All initContainers must set readOnlyRootFilesystem=true."
+
+    # 3️⃣ ephemeralContainers
+    - expression: >
+        !has(object.spec.ephemeralContainers) ||
+        object.spec.ephemeralContainers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.readOnlyRootFilesystem) &&
+          c.securityContext.readOnlyRootFilesystem == true
+        )
+      message: "All ephemeralContainers must set readOnlyRootFilesystem=true."
+
+    # 4️⃣ Seccomp profile (pod-level OR container-level)
+    - expression: >
+        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        (
+          (
+            has(object.spec.securityContext) &&
+            has(object.spec.securityContext.seccompProfile) &&
+            object.spec.securityContext.seccompProfile.type in ["RuntimeDefault", "Localhost"]
+          )
+          ||
+          object.spec.containers.all(c,
+            has(c.securityContext) &&
+            has(c.securityContext.seccompProfile) &&
+            c.securityContext.seccompProfile.type in ["RuntimeDefault", "Localhost"]
+          )
+        )
+      message: "Pod or all containers must define seccompProfile.type as RuntimeDefault or Localhost."
+
+    # 5️⃣ initContainers seccomp
+    - expression: >
+        !has(object.spec.initContainers) ||
+        object.spec.initContainers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.seccompProfile) &&
+          c.securityContext.seccompProfile.type in ["RuntimeDefault", "Localhost"]
+        )
+      message: "All initContainers must define seccompProfile."
+
+    # 6️⃣ ephemeralContainers seccomp
+    - expression: >
+        !has(object.spec.ephemeralContainers) ||
+        object.spec.ephemeralContainers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.seccompProfile) &&
+          c.securityContext.seccompProfile.type in ["RuntimeDefault", "Localhost"]
+        )
+      message: "All ephemeralContainers must define seccompProfile."

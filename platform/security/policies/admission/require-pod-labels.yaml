@@ -1,0 +1,26 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-pod-labels
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+
+  validations:
+    - expression: >
+        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        has(object.metadata.labels) &&
+        has(object.metadata.labels["app.kubernetes.io/name"]) &&
+        has(object.metadata.labels["app.kubernetes.io/version"]) &&
+        has(object.metadata.labels["app.kubernetes.io/part-of"]) &&
+        object.metadata.labels["app.kubernetes.io/name"].trim() != "" &&
+        object.metadata.labels["app.kubernetes.io/version"].trim() != "" &&
+        object.metadata.labels["app.kubernetes.io/part-of"].trim() != ""
+      message: >
+        Pods must include non-empty labels:
+        app.kubernetes.io/name, app.kubernetes.io/version,
+        and app.kubernetes.io/part-of.

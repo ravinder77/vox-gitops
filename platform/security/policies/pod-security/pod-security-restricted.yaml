@@ -1,0 +1,75 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: pod-security-restricted
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+
+  validations:
+    # 1️⃣ Disallow privilege escalation
+    - expression: >
+        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.spec.containers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.allowPrivilegeEscalation) &&
+          c.securityContext.allowPrivilegeEscalation == false
+        )
+      message: "Containers must set allowPrivilegeEscalation=false."
+
+    # 2️⃣ Must not run as root
+    - expression: >
+        object.metadata.namespace in ["vox-backend", "vox-frontend"] &&
+        object.spec.containers.all(c,
+          has(c.securityContext) &&
+          (
+            (has(c.securityContext.runAsNonRoot) && c.securityContext.runAsNonRoot == true) ||
+            (has(c.securityContext.runAsUser) && c.securityContext.runAsUser > 0)
+          )
+        )
+      message: "Containers must run as non-root (runAsNonRoot=true or runAsUser>0)."
+
+    # 3️⃣ Disallow privileged containers
+    - expression: >
+        object.spec.containers.all(c,
+          !has(c.securityContext.privileged) ||
+          c.securityContext.privileged == false
+        )
+      message: "Privileged containers are not allowed."
+
+    # 4️⃣ Drop ALL capabilities
+    - expression: >
+        object.spec.containers.all(c,
+          has(c.securityContext) &&
+          has(c.securityContext.capabilities) &&
+          has(c.securityContext.capabilities.drop) &&
+          c.securityContext.capabilities.drop.exists(d, d == "ALL")
+        )
+      message: "Containers must drop ALL Linux capabilities."
+
+    # 5️⃣ Disallow host namespaces
+    - expression: >
+        !has(object.spec.hostPID) || object.spec.hostPID == false
+      message: "hostPID must be false."
+
+    - expression: >
+        !has(object.spec.hostIPC) || object.spec.hostIPC == false
+      message: "hostIPC must be false."
+
+    - expression: >
+        !has(object.spec.hostNetwork) || object.spec.hostNetwork == false
+      message: "hostNetwork must be false."
+
+    # 6️⃣ Disallow host ports
+    - expression: >
+        object.spec.containers.all(c,
+          !has(c.ports) ||
+          c.ports.all(p,
+            !has(p.hostPort) || p.hostPort == 0
+          )
+        )
+      message: "Host ports are not allowed."

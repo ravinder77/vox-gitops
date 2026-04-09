@@ -1,16 +1,54 @@
-apiVersion: gateway.k8s.aws/v1beta1
-kind: TargetGroupConfiguration
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: vox-backend-tg
-  namespace: vox
+  name: vox-backend-route
+  namespace: vox-backend
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
 spec:
-  targetReference:
-    group: ""
-    kind: Service
-    name: vox-backend-stable
-  defaultConfiguration:
-    targetType: ip
-    protocol: HTTP
-    healthCheckConfig:
-      healthCheckProtocol: HTTP
-      healthCheckPath: /health
+  parentRefs:
+    - name: vox-gateway
+      namespace: vox-backend
+      sectionName: https
+
+  hostnames:
+    - "api.vox.example.com"   # ← update
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /api
+      backendRefs:
+        - name: vox-backend        # references Service created by helm/backend chart
+          namespace: vox-backend
+          port: 3000
+          weight: 100
+
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /health
+      backendRefs:
+        - name: vox-backend
+          namespace: vox-backend
+          port: 3000
+
+---
+# TargetGroupBinding wires the ALB Target Group directly to pod IPs
+# bypassing kube-proxy for lower latency (target-type: ip)
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: vox-backend-tgb
+  namespace: vox-backend
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  serviceRef:
+    name: vox-backend
+    port: 4000
+  targetType: ip
+  # targetGroupARN is populated by LBC after ALB provisioning
+  # You can also pin it here if using a pre-created TG:
+  # targetGroupARN: arn:aws:elasticloadbalancing:ap-south-1:123456789012:targetgroup/...
