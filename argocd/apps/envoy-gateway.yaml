@@ -3,31 +3,22 @@ kind: Application
 metadata:
   name: envoy-gateway
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
 spec:
-  project: vox
+  project: default
   source:
-    repoURL: docker.io/envoyproxy
     chart: gateway-helm
-    targetRevision: v1.7.0
-    helm:
-      values: |
-        deployment:
-          replicas: 2
+    repoURL: docker.io/envoyproxy
+    targetRevision: v1.7.1
   destination:
-    server: https://kubernetes.default.svc
     namespace: envoy-gateway-system
+    server: https://kubernetes.default.svc
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-      - Replace=true
+    automated:
+      prune: true
+      selfHeal: true
     retry:
       limit: 5
       backoff:

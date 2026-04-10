@@ -7,8 +7,8 @@ GitOps repo for the Vox project on EKS.
 - `argocd/bootstrap/`: root Argo CD bootstrap application
 - `argocd/apps/`: Argo CD applications managed by the app-of-apps pattern
 - `argocd/project/`: Argo CD AppProject definitions
-- `platform/gateway/`: shared Gateway API and AWS ALB resources
-- `platform/security/`: IRSA service accounts and namespace bootstrap manifests
+- `platform/gateway/`: shared Gateway API resources
+- `platform/security/`: IRSA service accounts, External Secrets resources, and namespace bootstrap manifests
 - `helm/backend/`: backend workload chart
 - `helm/frontend/`: frontend workload chart
 - `ansible/`: operator and node bootstrap playbooks
@@ -26,7 +26,7 @@ GitOps repo for the Vox project on EKS.
 ## Notes
 
 - Workloads are expected to run in the `vox` namespace.
-- `argocd/apps/` only includes applications whose charts or manifest paths still exist in this repo.
+- `argocd/apps/` includes remote Helm applications for External Secrets, monitoring, and Argo Rollouts in addition to repo-managed applications.
 - `scripts/validate-manifests.sh` fails fast if production placeholders such as `AWS_ACCOUNT_ID`, example domains, or the sample Slack webhook are still present in deployable manifests.
 - Required environment-specific values are documented in [`docs/production-configuration.md`](/Users/ravinder/Projects/vox-gitops/docs/production-configuration.md).
 - Run [`scripts/validate-manifests.sh`](/Users/ravinder/Projects/vox-gitops/scripts/validate-manifests.sh) before pushing manifest changes.
