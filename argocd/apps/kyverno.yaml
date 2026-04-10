@@ -4,8 +4,7 @@ metadata:
   name: kyverno
   namespace: argocd
   annotations:
-    # Wave 1 — Kyverno CRDs must exist before any ClusterPolicy/Policy objects
-    # Runs alongside aws-lbc and gateway-api-crds
+    # Wave 1 — Kyverno CRDs must exist before any ClusterPolicy/Policy objects.
     argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -13,70 +12,30 @@ spec:
   project: vox
 
   source:
-    repoURL: https://kyverno.github.io/kyverno
+    repoURL: https://kyverno.github.io/kyverno/
     chart: kyverno
-    targetRevision: 3.2.6
+    targetRevision: 1.17.0   #  pin version
     helm:
-      releaseName: kyverno
       values: |
-        # HA mode — 3 replicas across AZs
-        replicaCount: 3
-
         admissionController:
-          replicas: 3
-          resources:
-            requests:
-              cpu: 100m
-              memory: 256Mi
-            limits:
-              cpu: 500m
-              memory: 512Mi
-          # Fail-open — if Kyverno is unavailable, requests are allowed through
-          # Change to Fail for stricter posture once stable
-          failurePolicy: Ignore
-
+          replicas: 2
         backgroundController:
-          replicas: 2
-          resources:
-            requests:
-              cpu: 50m
-              memory: 128Mi
-
+          enabled: true
         cleanupController:
-          replicas: 1
-
+          enabled: true
         reportsController:
-          replicas: 2
-
-        # Metrics for Prometheus scraping
-        serviceMonitor:
           enabled: true
-          namespace: monitoring
-          interval: 30s
 
-        # Exclude ArgoCD and Kyverno system namespaces from policy enforcement
-        # to avoid bootstrap deadlocks
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
         config:
-          excludeGroups:
-            - system:nodes
-          excludeUsernames:
-            - system:node
-          excludeRoles:
-            - ClusterRole/kyverno:admission-controller
-            - ClusterRole/kyverno:background-controller
-          resourceFilters:
-            - "[Event,*,*]"
-            - "[*,kube-system,*]"
-            - "[*,kube-public,*]"
-            - "[*,kube-node-lease,*]"
-            - "[*,kyverno,*]"
-            - "[*,argocd,*]"
-
-        webhooksCleanup:
-          enabled: true
-
-        crds:
-          install: true
+          excludeNamespaces:
+            - kube-system
+            - kube-public
+            - argocd
 
   destination:
     server: https://kubernetes.default.svc

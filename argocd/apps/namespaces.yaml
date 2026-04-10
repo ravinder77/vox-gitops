@@ -1,28 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kyverno-policies
+  name: namespaces
   namespace: argocd
-  annotations:
-    # Wave 2 — Kyverno CRDs (wave 1) must be installed before ClusterPolicy objects
-    # Runs alongside external-secrets, argo-rollouts, image-updater, security
-    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "-6"
 spec:
   project: vox
-
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
-    path: platform/policies
+    path: platform/security/namespaces
     directory:
       recurse: true
-
   destination:
     server: https://kubernetes.default.svc
-    namespace: kyverno   # ClusterPolicies are cluster-scoped; namespace is nominal
-
   syncPolicy:
     automated:
       prune: true
@@ -30,3 +24,9 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

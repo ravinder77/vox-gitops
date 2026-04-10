@@ -15,14 +15,10 @@ spec:
   sourceRepos:
     - https://github.com/ravinder77/vox-gitops.git
     - https://github.com/ravinder77/vox.git
-    - https://github.com/kubernetes-sigs/gateway-api.git
-    - https://github.com/kubernetes-sigs/aws-load-balancer-controller.git
-    - https://charts.external-secrets.io
+    - docker.io/envoyproxy
     - https://argoproj.github.io/argo-helm
-    - https://prometheus-community.github.io/helm-charts
     - https://kyverno.github.io/kyverno
     - https://helm.nginx.com/stable
-    - https://aws.github.io/eks-charts
 
 # --------- Allowed destination clusters and namespaces ----
   destinations:
@@ -31,11 +27,7 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: argocd
     - server: https://kubernetes.default.svc
-      namespace: monitoring
-    - server: https://kubernetes.default.svc
-      namespace: external-secrets
-    - server: https://kubernetes.default.svc
-      namespace: argo-rollouts
+      namespace: envoy-gateway-system
     - server: https://kubernetes.default.svc
       namespace: kube-system
     - server: https://kubernetes.default.svc
@@ -50,16 +42,10 @@ spec:
       kinds: [ "Deployment", "StatefulSet" ]
     - group: autoscaling
       kinds: [ "HorizontalPodAutoscaler" ]
-    - group: argoproj.io
-      kinds: [ "Rollout", "AnalysisTemplate", "ClusterAnalysisTemplate" ]
     - group: gateway.networking.k8s.io
       kinds: [ "Gateway", "HTTPRoute", "ReferenceGrant" ]
     - group: gateway.k8s.aws
       kinds: [ "LoadBalancerConfiguration", "TargetGroupConfiguration" ]
-    - group: elbv2.k8s.aws
-      kinds: [ "TargetGroupBinding" ]
-    - group: external-secrets.io
-      kinds: [ "ExternalSecret" ]
     - group: monitoring.coreos.com
       kinds: [ "ServiceMonitor" ]
     - group: rbac.authorization.k8s.io
@@ -89,8 +75,6 @@ spec:
       kind: MutatingWebhookConfiguration
     - group: admissionregistration.k8s.io
       kind: ValidatingWebhookConfiguration
-    - group: external-secrets.io
-      kind: ClusterSecretStore
     - group: gateway.networking.k8s.io
       kind: GatewayClass
     - group: policies.kyverno.io

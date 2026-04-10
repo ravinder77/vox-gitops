@@ -1,11 +1,8 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
-  name: aws-alb
+  name: envoy
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
-  # AWS Load Balancer Controller implements this GatewayClass
-  # The controller watches for Gateway resources using this className
-  # and provisions an AWS ALB for each one
-  controllerName: gateway.k8s.aws/alb
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller

@@ -20,7 +20,7 @@ spec:
             type: PathPrefix
             value: /api
       backendRefs:
-        - name: vox-backend        # references Service created by helm/backend chart
+        - name: vox-backend
           namespace: vox
           port: 4000
           weight: 100
@@ -33,22 +33,3 @@ spec:
         - name: vox-backend
           namespace: vox
           port: 4000
-
----
-# TargetGroupBinding wires the ALB Target Group directly to pod IPs
-# bypassing kube-proxy for lower latency (target-type: ip)
-apiVersion: elbv2.k8s.aws/v1beta1
-kind: TargetGroupBinding
-metadata:
-  name: vox-backend-tgb
-  namespace: vox
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
-spec:
-  serviceRef:
-    name: vox-backend
-    port: 4000
-  targetType: ip
-  # targetGroupARN is populated by LBC after ALB provisioning
-  # You can also pin it here if using a pre-created TG:
-  # targetGroupARN: arn:aws:elasticloadbalancing:ap-south-1:123456789012:targetgroup/...

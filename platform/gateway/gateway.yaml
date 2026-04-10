@@ -5,22 +5,8 @@ metadata:
   namespace: vox
   annotations:
     argocd.argoproj.io/sync-wave: "2"
-    # ALB annotations passed through Gateway — LBC reads these
-    gateway.alb.ingress.kubernetes.io/scheme: internet-facing
-    gateway.alb.ingress.kubernetes.io/target-type: ip
-    gateway.alb.ingress.kubernetes.io/load-balancer-name: vox-alb
-    gateway.alb.ingress.kubernetes.io/healthcheck-path: /healthz
-    gateway.alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
-    gateway.alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-    gateway.alb.ingress.kubernetes.io/healthy-threshold-count: "2"
-    gateway.alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
-    # SSL cert — ACM ARN
-#    gateway.alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:ap-south-1:123456789012:certificate/xxxx   # ← update
-#    gateway.alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
-#    gateway.alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
-#    gateway.alb.ingress.kubernetes.io/ssl-redirect: "443"
 spec:
-  gatewayClassName: aws-alb     # references gatewayclass.yaml
+  gatewayClassName: envoy
 
   listeners:
     - name: http
@@ -40,7 +26,7 @@ spec:
         mode: Terminate
         certificateRefs:
           - kind: Secret
-            name: vox-tls-cert    # or use ACM via annotation above
+            name: vox-tls-cert
       allowedRoutes:
         namespaces:
           from: Selector

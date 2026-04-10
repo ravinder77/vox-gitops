@@ -18,10 +18,10 @@ kubeconfig: ## Update kubeconfig for EKS cluster
 	aws eks update-kubeconfig --name $(CLUSTER_NAME) --region $(REGION)
 
 ## ── Step 2: Install ArgoCD ──────────────────────────────────────────────────
-argocd-install: ## Install ArgoCD into the cluster
+argocd-install: ## Install ArgoCD into the cluster from the repo-managed chart
 	kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
-	kubectl apply -n $(NAMESPACE) \
-	  -f https://raw.githubusercontent.com/argoproj/argo-cd/$(ARGOCD_VERSION)/manifests/install.yaml
+	helm dependency build helm/argo-cd
+	helm upgrade --install argocd helm/argo-cd -n $(NAMESPACE)
 	kubectl wait --for=condition=available --timeout=120s \
 	  deployment/argocd-server -n $(NAMESPACE)
 	@echo "✅ ArgoCD installed"

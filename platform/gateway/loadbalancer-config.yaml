@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  # This route handles redirect from HTTP → HTTPS at the ALB level
+  # Redirect cleartext HTTP traffic to HTTPS.
   parentRefs:
     - name: vox-gateway
       namespace: vox

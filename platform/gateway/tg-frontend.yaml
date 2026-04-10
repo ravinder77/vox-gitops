@@ -20,21 +20,7 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: vox-frontend       # references Service created by helm/frontend chart
+        - name: vox-frontend
           namespace: vox
           port: 80
           weight: 100
-
----
-apiVersion: elbv2.k8s.aws/v1beta1
-kind: TargetGroupBinding
-metadata:
-  name: vox-frontend-tgb
-  namespace: vox
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
-spec:
-  serviceRef:
-    name: vox-frontend
-    port: 80
-  targetType: ip

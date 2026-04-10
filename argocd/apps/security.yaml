@@ -16,7 +16,7 @@ spec:
   source:
     repoURL: https://github.com/ravinder77/vox-gitops.git
     targetRevision: main
-    path: platform/security
+    path: platform/security/irsa
     directory:
       recurse: true
 
@@ -40,8 +40,6 @@ spec:
         duration: 10s
         factor: 2
         maxDuration: 3m
-
-  # Ignore annotation changes that ESO writes back to secrets
   ignoreDifferences:
     - group: ""
       kind: Secret
