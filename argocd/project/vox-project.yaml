@@ -15,7 +15,6 @@ spec:
   sourceRepos:
     - https://github.com/ravinder77/vox-gitops.git
     - https://github.com/ravinder77/vox.git
-    - docker.io/envoyproxy
     - https://charts.external-secrets.io
     - https://argoproj.github.io/argo-helm
     - https://kyverno.github.io/kyverno
@@ -35,8 +34,6 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: argo-rollouts
     - server: https://kubernetes.default.svc
-      namespace: envoy-gateway-system
-    - server: https://kubernetes.default.svc
       namespace: kube-system
     - server: https://kubernetes.default.svc
       namespace: kyverno
@@ -52,10 +49,6 @@ spec:
       kinds: [ "HorizontalPodAutoscaler" ]
     - group: argoproj.io
       kinds: [ "Rollout", "AnalysisTemplate", "ClusterAnalysisTemplate" ]
-    - group: gateway.networking.k8s.io
-      kinds: [ "Gateway", "HTTPRoute", "ReferenceGrant" ]
-    - group: gateway.k8s.aws
-      kinds: [ "LoadBalancerConfiguration", "TargetGroupConfiguration" ]
     - group: external-secrets.io
       kinds: [ "ExternalSecret" ]
     - group: monitoring.coreos.com
@@ -89,8 +82,6 @@ spec:
       kind: ValidatingWebhookConfiguration
     - group: external-secrets.io
       kind: ClusterSecretStore
-    - group: gateway.networking.k8s.io
-      kind: GatewayClass
     - group: policies.kyverno.io
       kind: ValidatingPolicy
     - group: policies.kyverno.io

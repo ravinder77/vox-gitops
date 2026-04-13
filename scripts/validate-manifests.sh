@@ -32,7 +32,6 @@ if kubectl version --request-timeout=1s >/dev/null 2>&1; then
   kubectl apply --dry-run=client --validate=false -f "${ROOT_DIR}/argocd/apps" >/dev/null
   kubectl apply --dry-run=client --validate=false -f "${ROOT_DIR}/argocd/project/vox-project.yaml" >/dev/null
   kubectl apply --dry-run=client --validate=false -f "${ROOT_DIR}/argocd/bootstrap/root-app.yaml" >/dev/null
-  kubectl apply --dry-run=client --validate=false -f "${ROOT_DIR}/platform/gateway" >/dev/null
   kubectl apply --dry-run=client --validate=false -f "${ROOT_DIR}/platform/policies" >/dev/null
   kubectl apply --dry-run=client --validate=false -f "${ROOT_DIR}/platform/security" >/dev/null
 else
