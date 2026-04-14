@@ -47,3 +47,17 @@ resource "aws_subnet" "private" {
     "kubernetes.io/cluster/${var.cluster_name}" = "owned"
   })
 }
+
+# ── Database Subnets (RDS, ElastiCache — no route to internet) ───────────────
+resource "aws_subnet" "database" {
+  count = length(var.availability_zones)
+
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.database_subnet_cidrs[count.index]
+  availability_zone = var.availability_zones[count.index]
+
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-database-${var.availability_zones[count.index]}"
+    Tier = "database"
+  })
+}
