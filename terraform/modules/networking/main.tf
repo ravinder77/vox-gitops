@@ -8,13 +8,13 @@ terraform {
 }
 # ── VPC Module — 3-tier network with flow logs, endpoints, and NAT GW ────────
 resource "aws_vpc" "this" {
-  cidr_block = var.vpc_cidr
+  cidr_block           = var.vpc_cidr
   enable_dns_hostnames = true
-  enable_dns_support = true
+  enable_dns_support   = true
 
   tags = merge(var.tags, {
-    Name = "${var.name_prefix}-vpc"
-    "kubernetes.io/cluster/${var.cluster_name}"     = "shared"
+    Name                                        = "${var.name_prefix}-vpc"
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   })
 }
 
@@ -30,23 +30,23 @@ resource "aws_internet_gateway" "this" {
 resource "aws_subnet" "public" {
   count = length(var.availability_zones)
 
-  vpc_id = aws_vpc.this.id
-  cidr_block = var.public_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
+  vpc_id                  = aws_vpc.this.id
+  cidr_block              = var.public_subnet_cidrs[count.index]
+  availability_zone       = var.availability_zones[count.index]
   map_public_ip_on_launch = false
 
   tags = merge(var.tags, {
-    Name = "${var.name_prefix}-public-subnet-${var.availability_zones[count.index]}"
-    "kubernetes.io/role/elb" = "1"
+    Name                                        = "${var.name_prefix}-public-subnet-${var.availability_zones[count.index]}"
+    "kubernetes.io/role/elb"                    = "1"
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
   })
 }
 
 # ── Private Subnets (EKS nodes)
 resource "aws_subnet" "private" {
-  count = length(var.availability_zones)
-  vpc_id = aws_vpc.this.id
-  cidr_block = var.private_subnet_cidrs[count.index]
+  count             = length(var.availability_zones)
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.private_subnet_cidrs[count.index]
   availability_zone = var.availability_zones[count.index]
 
   tags = merge(var.tags, {
@@ -73,7 +73,7 @@ resource "aws_subnet" "database" {
 
 # ── Elastic IPs and NAT Gateways (one per AZ for HA) ─────────────────────────
 resource "aws_eip" "nat" {
-  count = length(var.availability_zones)
+  count  = length(var.availability_zones)
   domain = "vpc"
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-nat-eip-${count.index + 1}"
@@ -81,9 +81,9 @@ resource "aws_eip" "nat" {
 }
 
 resource "aws_nat_gateway" "this" {
-  count = length(var.availability_zones)
+  count         = length(var.availability_zones)
   allocation_id = aws_eip.nat[count.index].id
-  subnet_id = aws_subnet.public[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
 
   tags = merge(var.tags, {
     Name = "${var.name_prefix}-nat-${var.availability_zones[count.index]}"
@@ -104,10 +104,10 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table" "private" {
-  count = length(var.availability_zones)
+  count  = length(var.availability_zones)
   vpc_id = aws_vpc.this.id
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.this[count.index].id
   }
   tags = merge(var.tags, {
@@ -118,21 +118,21 @@ resource "aws_route_table" "private" {
 resource "aws_route_table" "database" {
   vpc_id = aws_vpc.this.id
   # No default route — database subnets are isolated
-  tags   = merge(var.tags, {
+  tags = merge(var.tags, {
     Name = "${var.name_prefix}-rt-database"
   })
 }
 
 # Route table associations
 resource "aws_route_table_association" "public" {
-  count = length(var.availability_zones)
-  subnet_id = aws_subnet.public[count.index].id
+  count          = length(var.availability_zones)
+  subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }
 
 resource "aws_route_table_association" "private" {
-  count = length(var.availability_zones)
-  subnet_id = aws_subnet.private[count.index].id
+  count          = length(var.availability_zones)
+  subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private[count.index].id
 }
 
@@ -144,13 +144,13 @@ resource "aws_route_table_association" "database" {
 
 # ── VPC Flow Logs → S3 ───────────────────────────────────────────────────────
 resource "aws_flow_log" "s3" {
-  log_destination = "${var.flow_logs_bucket_arn}/vpc-flow-logs"
+  log_destination      = "${var.flow_logs_bucket_arn}/vpc-flow-logs"
   log_destination_type = "s3"
-  traffic_type = "ALL"
-  vpc_id = aws_vpc.this.id
+  traffic_type         = "ALL"
+  vpc_id               = aws_vpc.this.id
 
   destination_options {
-    file_format = "parquet"
+    file_format        = "parquet"
     per_hour_partition = true
   }
   tags = merge(var.tags, { Name = "${var.name_prefix}-flow-logs" })
@@ -158,7 +158,7 @@ resource "aws_flow_log" "s3" {
 
 # ── VPC Endpoints — keep traffic off the internet ────────────────────────────
 locals {
-  gateway_endpoints =  ["s3", "dynamodb"]
+  gateway_endpoints = ["s3", "dynamodb"]
   interface_endpoints = [
     "ec2", "ecr.api", "ecr.dkr", "sts", "logs",
     "secretsmanager", "kms", "ssm", "ssmmessages",
@@ -169,10 +169,10 @@ locals {
 resource "aws_vpc_endpoint" "gateway" {
   for_each = toset(local.gateway_endpoints)
 
-  vpc_id = aws_vpc.this.id
-  service_name = "com.amazonaws.${var.aws_region}.${each.key}"
+  vpc_id            = aws_vpc.this.id
+  service_name      = "com.amazonaws.${var.aws_region}.${each.key}"
   vpc_endpoint_type = "Gateway"
-  route_table_ids   = concat(
+  route_table_ids = concat(
     aws_route_table.private[*].id,
     [aws_route_table.database.id]
   )
@@ -188,7 +188,7 @@ resource "aws_security_group" "vpc_endpoints_sg" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_tls" {
   security_group_id = aws_security_group.vpc_endpoints_sg.id
-  cidr_ipv4 = aws_vpc.this.cidr_block
+  cidr_ipv4         = aws_vpc.this.cidr_block
   from_port         = 443
   ip_protocol       = "tcp"
   to_port           = 443
@@ -198,5 +198,65 @@ resource "aws_vpc_security_group_ingress_rule" "allow_tls" {
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic" {
   security_group_id = aws_security_group.vpc_endpoints_sg.id
   cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1"    # all protocols
+  ip_protocol       = "-1" # all protocols
+}
+
+resource "aws_vpc_endpoint" "interface" {
+  for_each = toset(local.interface_endpoints)
+
+  vpc_id              = aws_vpc.this.id
+  service_name        = "com.amazonaws.${var.aws_region}.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpc_endpoints_sg.id]
+  private_dns_enabled = true
+
+  tags = merge(var.tags, { Name = "${var.name_prefix}-ep-${replace(each.key, ".", "-")}" })
+}
+
+resource "aws_network_acl" "database" {
+  vpc_id = aws_vpc.this.id
+  subnet_ids = aws_subnet.database[*].id
+
+  # Allow PostgreSQL from private subnets
+  ingress {
+    rule_no    = 100
+    protocol = "tcp"
+    action = "allow"
+    cidr_block = var.vpc_cidr
+    from_port = 5432
+    to_port = 5432
+  }
+
+  # Allow Redis from private subnets
+  ingress {
+    rule_no    = 110
+    protocol = "tcp"
+    action = "allow"
+    cidr_block = var.vpc_cidr
+    from_port = 6379
+    to_port = 6379
+  }
+
+  # Allow ephemeral port responses
+  ingress {
+    rule_no    = 200
+    protocol = "tcp"
+    action = "allow"
+    cidr_block = var.vpc_cidr
+    from_port = 1024
+    to_port = 65535
+  }
+  egress {
+    rule_no    = 100
+    protocol = "tcp"
+    action = "allow"
+    cidr_block = var.vpc_cidr
+    from_port = 1024
+    to_port = 65535
+  }
+
+
+
+  tags = merge(var.tags, { Name = "${var.name_prefix}-nacl-database" })
 }

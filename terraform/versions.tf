@@ -25,4 +25,13 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "vox"
+      Environment = var.environment
+      ManagedBy   = "terraform"
+      Repository  = "vox-gitops"
+    }
+  }
 }
