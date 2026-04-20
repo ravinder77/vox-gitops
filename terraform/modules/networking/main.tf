@@ -256,7 +256,5 @@ resource "aws_network_acl" "database" {
     to_port = 65535
   }
 
-
-
   tags = merge(var.tags, { Name = "${var.name_prefix}-nacl-database" })
 }
