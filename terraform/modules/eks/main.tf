@@ -37,8 +37,6 @@ resource "aws_vpc_security_group_egress_rule" "cluster_outbound" {
 }
 
 
-
-
 # EKS Nodes - Security Group
 resource "aws_security_group" "nodes" {
   name = "${var.name_prefix}-eks-nodes"
