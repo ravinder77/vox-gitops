@@ -43,25 +43,66 @@ resource "aws_vpc_security_group_egress_rule" "rds_all_outbound" {
 }
 
 resource "aws_rds_cluster_parameter_group" "this" {
-  name = "${var.name_prefix}-aurora-pg17"
-  family = "aurora-postgresql17"
-  description = "Aurora PostgreSQL 17 parameters for ${var.name_prefix}"
+  name = "${var.name_prefix}-aurora-pg18"
+  family = "aurora-postgresql18"
+  description = "Aurora PostgreSQL 18 parameters for ${var.name_prefix}"
 
   parameter {
-    name  = ""
-    value = ""
+    name  = "log_statement"
+    value = "ddl"
   }
 
   parameter {
-    name  = ""
-    value = ""
+    name  = "log_min_duration_statement"
+    value = "1000"
   }
+
+  parameter {
+    name  = "shared_preload_libraries"
+    value = "pg_stat_statements,auto_explain"
+  }
+
+  parameter {
+    name  = "rds.force_ssl"
+    value = "1"
+  }
+
+  tags = merge(var.tags, { Name = "${var.name_prefix}-pg18-params" })
 
 }
 
 resource "aws_rds_cluster" "this" {
   cluster_identifier = "${var.name_prefix}-aurora"
-
+  engine = "aurora-postgresql"
+  engine_version = "18.1"
+  engine_mode = "provisioned"
+  database_name = var.database_name
   master_username = "ravinder"
   manage_master_user_password = true
+
+  db_subnet_group_name = aws_db_subnet_group.this.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+  db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.this.name
+
+  storage_encrypted = true
+  kms_key_id = var.kms_key_arn
+
+  backup_retention_period = var.backup_retention_days
+  preferred_backup_window = "02:00-03:00"
+  preferred_maintenance_window = "sun:04:00-sun:05:00"
+
+  copy_tags_to_snapshot = true
+  delete_automated_backups = true
+  skip_final_snapshot = false
+  final_snapshot_identifier = "${var.name_prefix}-aurora-final-${formatdate("YYYYMMDDhhmmss", timestamp())}"
+
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+
+  serverlessv2_scaling_configuration {
+    max_capacity = 0.5
+    min_capacity = 128
+  }
+
+  tags = merge(var.tags, { Name = "${var.name_prefix}-aurora" })
 }
+
