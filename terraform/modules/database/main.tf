@@ -1,4 +1,11 @@
-
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "6.17.0"
+    }
+  }
+}
 resource "aws_db_subnet_group" "this" {
   name = "${var.name_prefix}-rds"
   description = "Database subnet group for ${var.name_prefix} Aurora cluster"
@@ -60,10 +67,26 @@ resource "aws_rds_cluster_parameter_group" "this" {
   parameter {
     name  = "shared_preload_libraries"
     value = "pg_stat_statements,auto_explain"
+    apply_method = "pending-reboot"
   }
 
   parameter {
     name  = "rds.force_ssl"
+    value = "1"
+  }
+
+  parameter {
+    name  = "idle_in_transaction_session_timeout"
+    value = "300000"
+  }
+
+  parameter {
+    name  = "log_connections"
+    value = "1"
+  }
+
+  parameter {
+    name  = "log_disconnections"
     value = "1"
   }
 
@@ -99,10 +122,36 @@ resource "aws_rds_cluster" "this" {
   enabled_cloudwatch_logs_exports = ["postgresql"]
 
   serverlessv2_scaling_configuration {
-    max_capacity = 0.5
-    min_capacity = 128
+    min_capacity = 0.5
+    max_capacity = 128
   }
 
   tags = merge(var.tags, { Name = "${var.name_prefix}-aurora" })
 }
 
+
+
+
+resource "aws_rds_cluster_instance" "this" {
+  count = 2
+
+  identifier =  "${var.name_prefix}-aurora-${count.index}"
+  cluster_identifier = aws_rds_cluster.this.id
+  instance_class     = var.instance_class == "serverless" ? "db.serverless" : var.instance_class
+  engine             = aws_rds_cluster.this.engine
+  engine_version     = aws_rds_cluster.this.engine_version
+
+  publicly_accessible = false
+  auto_minor_version_upgrade = true
+  performance_insights_enabled = true
+  performance_insights_kms_key_id = var.kms_key_arn
+  performance_insights_retention_period = 7
+
+  monitoring_interval = 60
+  monitoring_role_arn = var.monitoring_role_arn
+
+  tags = merge(var.tags, {
+    Name = "${var.name_prefix}-aurora-instance-${count.index}"
+    Role = count.index == 0 ? "writer" : "reader"
+  })
+}
