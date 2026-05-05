@@ -11,7 +11,7 @@ spec:
         resources: ["pods"]
 
   validations:
-    # 1️⃣ Disallow privilege escalation
+    # 1️Disallow privilege escalation
     - expression: >
         object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
@@ -21,7 +21,7 @@ spec:
         )
       message: "Containers must set allowPrivilegeEscalation=false."
 
-    # 2️⃣ Must not run as root
+    # 2 Must not run as root
     - expression: >
         object.metadata.namespace == "vox" &&
         object.spec.containers.all(c,
@@ -33,7 +33,7 @@ spec:
         )
       message: "Containers must run as non-root (runAsNonRoot=true or runAsUser>0)."
 
-    # 3️⃣ Disallow privileged containers
+    # 3 Disallow privileged containers
     - expression: >
         object.spec.containers.all(c,
           !has(c.securityContext.privileged) ||
@@ -41,7 +41,7 @@ spec:
         )
       message: "Privileged containers are not allowed."
 
-    # 4️⃣ Drop ALL capabilities
+    # 4 Drop ALL capabilities
     - expression: >
         object.spec.containers.all(c,
           has(c.securityContext) &&
@@ -51,7 +51,7 @@ spec:
         )
       message: "Containers must drop ALL Linux capabilities."
 
-    # 5️⃣ Disallow host namespaces
+    # 5 Disallow host namespaces
     - expression: >
         !has(object.spec.hostPID) || object.spec.hostPID == false
       message: "hostPID must be false."
@@ -64,7 +64,7 @@ spec:
         !has(object.spec.hostNetwork) || object.spec.hostNetwork == false
       message: "hostNetwork must be false."
 
-    # 6️⃣ Disallow host ports
+    # 6 Disallow host ports
     - expression: >
         object.spec.containers.all(c,
           !has(c.ports) ||

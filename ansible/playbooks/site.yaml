@@ -1,4 +1,0 @@
----
-- import_playbook: bootstrap.yaml
-- import_playbook: eks-node.yaml
-- import_playbook: hardening
